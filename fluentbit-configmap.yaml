@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: xxxxx-online
+  labels:
+    k8s-app: fluent-bit-xxxx
+data:
+  # Configuration files: server, input, filters and output
+  # https://blog.csdn.net/wtan825/article/details/93206971
+  # ======================================================
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         30
+        Log_Level     error
+        Daemon        off
+        HTTP_Server   Off
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+        Parsers_File  parsers.conf
+    [INPUT]
+        Name        tail
+        Path        /home/work/service.log
+        Tag         xxx.service
+        Parser      xxx-service
+        Buffer_Chunk_Size 32k
+        Buffer_Max_Size 10m
+        Mem_Buf_Limit     20MB
+        Rotate_Wait        5
+    [INPUT]
+        Name        tail
+        Path        /home/work/service.log.wf
+        Tag         xxx.service.wf
+        Parser      xxx-service-wf
+        Buffer_Chunk_Size 32k
+        Buffer_Max_Size 10m
+        Mem_Buf_Limit     20MB
+        Rotate_Wait        5
+    [INPUT]
+        Name        tail
+        Path        /home/work/ral-worker.log
+        Tag         xxx.ral.work
+        Parser      xxx-ral-work
+        Buffer_Chunk_Size 32k
+        Buffer_Max_Size 10m
+        Mem_Buf_Limit     20MB
+        Rotate_Wait        5
+    [INPUT]
+        Name        tail
+        Path        /home/work/ral-worker.log.wf
+        Tag         xxx.ral.work.wf
+        Parser      xxx-ral-work-wf
+        Buffer_Chunk_Size 32k
+        Buffer_Max_Size 10m
+        Mem_Buf_Limit     20MB
+        Rotate_Wait        5
+    [FILTER]
+        Name record_modifier
+        Match *
+        Record hostname ${HOSTNAME}
+    [OUTPUT]
+        Name  es
+        Match xxx.service
+        Host  172.31.39.30
+        Port  8200
+        Logstash_Format true
+        Logstash_Prefix xxxxx_service_index
+        Logstash_DateFormat %Y.%m.%d
+        Retry_Limit 1
+        Type  my_type
+    [OUTPUT]
+        Name  es
+        Match xxx.ral.work
+        Host  172.31.39.30
+        Port  8200
+        Logstash_Format true
+        Logstash_Prefix xxxxx_ral_work_index
+        Logstash_DateFormat %Y.%m.%d
+        Retry_Limit 1
+        Type  my_type
+    [OUTPUT]
+        Name  es
+        Match xxx.service.wf
+        Host  172.31.39.30
+        Port  8200
+        Logstash_Format true
+        Logstash_Prefix xxxxx_service_wf_index
+        Logstash_DateFormat %Y.%m.%d
+        Retry_Limit 1
+        Type  my_type
+    [OUTPUT]
+        Name  es
+        Match xxx.ral.work.wf
+        Host  172.31.39.30
+        Port  8200
+        Logstash_Format true
+        Logstash_Prefix xxxxx_ral_work_wf_index
+        Logstash_DateFormat %Y.%m.%d
+        Retry_Limit 1
+        Type  my_type
+  parsers.conf: |
+    [PARSER]
+        Name   xxx-service
+        Format regex
+        Regex logid\[(?<logid>.*)\] err\[(?<err>\d)\] api\[(?<api>[^ ]*)\] status\[(?<status>\d*)\] appkey\[.*?\] req_app\[.*?\] appname\[.*?\] cost\[(?<cost>\d+\.\d+|\d+)\] errno\[(?<errno>\d+)\] protocol\[\S+\] idc\[\S+\] user_ip\[.*?\] local_ip\[.*?\] pid\[\d+\] method\[\S+\] uri\[(?<uri>\S+)\] host\[(?<host>\S+)\] refer\[.*?\] optime\[.*?\] cookie\[.*?\] message\[(?<message>.*)\]
+        Types cost:integer status:integer errno: integer
+    [PARSER]
+        Name xxx-ral-work
+        Format regex
+        Regex appname\[(?<appname>.*)\] uri\[(?<uri>.*)\] service\[(?<service>).*\] req_len\[\d+\] res_len\[\d+\] errno\[(?<errno>\d+)\] retry\[\S+\] cost\[(?<cost>\d+\.\d+|\d+)\] api\[(?<api>.*)\] logid\[(?<logid>.*)\] caller\[.*\] method\[.*\] protocol\[(?<protocol>\S+)\] balance\[\S+\] user_ip\[.*?\] local_ip\[.*?\] idc\[\S+\] remote_ip\[(?<remote_ip>.*?)\] .* errmsg\[(?<errmsg>.*?)\] .* message\[(?<message>.*)\]
+        Types cost:integer status:integer errno: integer
+    [PARSER]
+        Name xxx-ral-work-wf
+        Format regex
+        Regex appname\[(?<appname>.*)\] uri\[(?<uri>.*)\] service\[(?<service>).*\] req_len\[\d+\] res_len\[\d+\] errno\[(?<errno>\d+)\] retry\[\S+\] cost\[(?<cost>\d+\.\d+|\d+)\] api\[(?<api>.*)\] logid\[(?<logid>.*)\] caller\[.*\] method\[.*\] protocol\[(?<protocol>\S+)\] balance\[\S+\] user_ip\[.*?\] local_ip\[.*?\] idc\[\S+\] remote_ip\[(?<remote_ip>.*?)\] .* errmsg\[(?<errmsg>.*?)\] .* message\[(?<message>.*)\]
+        Types cost:integer status:integer errno: integer
+    [PARSER]
+        Name xxx-service-wf
+        Format regex
+        Regex logid\[(?<logid>.*)\] err\[(?<err>\d)\] api\[(?<api>[^ ]*)\] status\[(?<status>\d*)\] appkey\[.*?\] req_app\[.*?\] appname\[.*?\] cost\[(?<cost>\d+\.\d+|\d+)\] errno\[(?<errno>\d+)\] protocol\[\S+\] idc\[\S+\] user_ip\[.*?\] local_ip\[.*?\] pid\[\d+\] method\[\S+\] uri\[(?<uri>\S+)\] host\[(?<host>\S+)\] refer\[.*?\] optime\[.*?\] cookie\[.*?\] message\[(?<message>.*)\]
+        Types cost:integer status:integer errno: integer
