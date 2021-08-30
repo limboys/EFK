@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: app-online
+  labels:
+    app: app
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: app
+      sidecar: fluentbit-app
+  template:
+    metadata:
+      labels:
+        app: app
+        sidecar: fluentbit-app
+    spec:
+      containers:
+      - name: app
+        image: repo/app-online:latest
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "xxxxx"]
+        ports:
+        - containerPort: 8082
+        volumeMounts:
+          - name: app-log
+            mountPath: /home/work/app/log
+        resources:
+          limits:
+            cpu: "3"
+            memory: 12Gi
+          requests:
+            cpu: "3"
+            memory: 12Gi
+      - name: fluentbit
+        image: repo/fluentbit:latest
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: fluent-bit-config
+            mountPath: /fluent-bit/etc/
+          - name: app-log
+            mountPath: /home/work/app/log
+        resources:
+          limits:
+            cpu: 80m
+            memory: 200Mi
+          requests:
+            cpu: 80m
+            memory: 200Mi
+      volumes:
+        - name: fluent-bit-config
+          configMap:
+            name: fluent-bit-all-config
+        - name: app-log
+          emptyDir: {}
